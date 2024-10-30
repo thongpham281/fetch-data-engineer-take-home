@@ -16,6 +16,7 @@ KAFKA_BOOTSTRAP_SERVERS = 'localhost:29092'
 KAFKA_CONSUME_TOPIC = 'user-login'
 KAFKA_CONSUME_GROUP_ID = 'user-login-consumer-group-production'
 KAFKA_PROCEDURE_TOPIC = 'user-login-processed-production'
+KAFKA_DEAD_LETTER_TOPIC = 'user-login-dead-letter'
 
 
 def main():
@@ -43,8 +44,8 @@ def main():
     consumer = KafkaConsumer(
         KAFKA_CONSUME_TOPIC,
         bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-        auto_offset_reset='earliest',  # Historical data processing
-        # auto_offset_reset='latest',  # Real-time streaming
+        # auto_offset_reset='earliest',  # Historical data processing
+        auto_offset_reset='latest',  # Real-time streaming
         enable_auto_commit=True,
         group_id=KAFKA_CONSUME_GROUP_ID,
         value_deserializer=lambda x: json.loads(x.decode('utf-8'))  # Deserialize JSON from bytes
@@ -75,19 +76,9 @@ def main():
                 producer_module.main(producer, KAFKA_PROCEDURE_TOPIC, str(uuid.uuid4()), json.dumps(processed_message))
 
             except Exception as e:
-                # We have many storing solutions here for troubletooting later:
-                # 1. Store message in database
-                # 2. Store message in local disk
-                # 3. Store message in Cloud Storage
-                # 4. Send message to another queue
+                # We are going to store invalid messages in dead-letter topic in raw format
+                producer_module.main(producer, KAFKA_DEAD_LETTER_TOPIC, str(uuid.uuid4()), json.dumps(message.value))
 
-                # I will implement option 2 for this simple pipeline
-                invalid_file_path = os.path.join('../data/invalid', 'data.txt')
-                with open(invalid_file_path, 'a') as invalid_file:
-                    json.dump(message.value, invalid_file)
-                    invalid_file.write('\n')
-
-                # After this, error need to be notified to the user via email/Teams/etc
 
     except KeyboardInterrupt:
         print("Consumer stopped.")
