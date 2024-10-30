@@ -41,8 +41,8 @@ processing it in real-time, and storing the processed data into a new Kafka Topi
 - A Kafka consumer (main.py) listens to **user-login**, validates each message against the **predefined schema**, and
   transforms it by adding a readable timestamp.
 - Transformed messages are sent to a new Kafka topic **user-login-processed-production** using a Kafka producer.
-- Invalid messages are logged to a file in an "invalid" folder for further debugging and analysis. (have many other use
-  cases)
+- **Invalid messages** are captured and pushed back to the **user-login-dead-letter** topic. 
+- **consumer_dead_letter.py** is a Kafka consumer that listens to **user-login-dead-letter** topic and handles **invalid cases**.
 
 ### 3. Aggregation and Analytics:
 
@@ -89,12 +89,18 @@ Use Docker Compose to set up Kafka locally along with the data generator that ac
 docker-compose up -d
 ```
 
-### 5. Start Data Processing in `main.py`
+### 5. Start Data Processing in `consumer_dead_letter.py` and `main.py`
 
 Navigate to the `src` directory:
 
 ```bash
 cd src
+```
+
+Run `consumer_dead_letter.py` to consume invalid messages from Kafka, perform basic fix depend on each error case, and produce the fixed data to a old Kafka `user-login` topic:
+
+```bash
+python consumer_dead_letter.py
 ```
 
 Run `main.py` to consume data from Kafka, perform basic transformation, and produce the processed data to a new Kafka topic:
