@@ -6,7 +6,7 @@ from kafka import KafkaConsumer
 
 KAFKA_BOOTSTRAP_SERVERS = 'localhost:29092'
 KAFKA_CONSUME_TOPIC = 'user-login-processed-production'
-KAFKA_CONSUME_GROUP_ID = 'user-login-consumer-group-production-2'
+KAFKA_CONSUME_GROUP_ID = 'user-login-consumer-group-production'
 
 
 def main():
